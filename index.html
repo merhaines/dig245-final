@@ -156,6 +156,13 @@
             color: white;
             background-color: rgb(254, 109, 109);
         }
+
+        /* .marker {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+        } */
+        
     </style>
 </head>
 
@@ -178,27 +185,30 @@
 
     <script src="../dig245-final/assets/js/leaflet/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.all.min.js"></script>
+
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+       document.addEventListener('DOMContentLoaded', function () {
     var mymap = L.map('map').setView([0, 0], 2);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
     }).addTo(mymap);
 
-       // Add event listener for the radius slider
-       const radiusSlider = document.getElementById('radiusSlider');
-        const radiusValue = document.getElementById('radiusValue');
+    // Add event listener for the radius slider
+    const radiusSlider = document.getElementById('radiusSlider');
+    const radiusValue = document.getElementById('radiusValue');
+    let firstClick = true; // Variable to track the first click
 
-        radiusSlider.addEventListener('input', function () {
+    radiusSlider.addEventListener('input', function () {
         const newRadius = parseInt(radiusSlider.value);
         radiusValue.textContent = newRadius;
         updateRadius(newRadius);
-        });
+    });
 
     async function updateRadius(newRadius) {
         // Fetch places data with the new radius
         fetchPlacesData(lastClickedLatLng.lat, lastClickedLatLng.lng, parseInt(radiusSlider.value));
     }
+
     // Define a layer group for markers
     const markersLayer = L.layerGroup().addTo(mymap);
 
@@ -217,14 +227,25 @@
         // Store the clicked coordinates in a variable
         lastClickedLatLng = e.latlng;
 
-        // Drop a pin at the clicked coordinates
-        const marker = L.marker([e.latlng.lat, e.latlng.lng]).addTo(mymap);
+        // Drop a star marker at the clicked coordinates
+        const markerColor = firstClick ? 'rgb(254, 109, 109)' : 'blue'; // Color for the first click
+        const marker = L.marker([e.latlng.lat, e.latlng.lng], {
+        icon: L.divIcon({
+        className: 'custom-marker',
+        html: '<svg height="30" width="30" xmlns="http://www.w3.org/2000/svg"><polygon points="15,0 18,10 28,10 20,15 23,25 15,20 7,25 10,15 2,10 12,10" style="fill:' + markerColor + '; stroke:black; stroke-width:2;"/></svg>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        })
+        }).addTo(mymap);
 
         lastMarker = marker;
         fetchPlacesData(e.latlng.lat, e.latlng.lng, 1600);
 
         // Show the reset button
         document.getElementById('resetButton').style.display = 'block';
+
+        // Update the firstClick variable
+        firstClick = false;
     });
 
     async function fetchPlacesData(latitude, longitude, radius) {
@@ -299,7 +320,7 @@
             // Helper function to display results
             function displayResults(results) {
                 const resultsContainer = document.getElementById('results');
-                resultsContainer.innerHTML = ''; // Clear previous results
+                resultsContainer.innerHTML = '';
 
                 // Group results by category
                 const groupedResults = groupResultsByCategory(results);
@@ -362,6 +383,7 @@
 
             document.getElementById('resetButton').addEventListener('click', function () {
                 markersLayer.clearLayers();
+                
 
                 if (lastMarker) {
                     mymap.removeLayer(lastMarker);
