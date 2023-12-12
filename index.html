@@ -11,9 +11,8 @@
     <p class="wander">WANDER</p>
     <p class="wiser">WISER</p>
     <h2>CHOOSE A PLACE TO EXPLORE</h2>
-    <link href="
-    https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css
-    " rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -190,8 +189,6 @@
     <script src="
     https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js
     "></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.all.min.js"></script>
-
     <script>
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -585,8 +582,27 @@
             });
 
         });
+        document.addEventListener('DOMContentLoaded', function () {
+        // Check if the user has already visited the site (using localStorage)
+        const hasVisited = localStorage.getItem('hasVisited');
+
+        // If not, show the welcome popup
+        if (!hasVisited) {
+            // Show the popup message using SweetAlert2
+            Swal.fire({
+                title: 'Welcome to WanderWiser!',
+                html: 'Your ultimate travel companion.<br><br>Discover a stress-free approach to travel where every journey becomes a seamless adventure. Trust in our wealth of information to guide you through your favorite cities so you can explore with confidence, make the most of every moment, and wander wiser.<br><br>Click anywhere on the map to unlock a world of adventure. Explore fun activities and must-see sites within your chosen radius. Your journey begins with a click!',
+                icon: 'info',
+                confirmButtonText: 'Got it!'
+            }).then(() => {
+                // Set a flag in localStorage to indicate that the user has visited the site
+                localStorage.setItem('hasVisited', 'true');
+            });
+        }
+    });
 
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.all.min.js"></script>
 
 </body>
 
