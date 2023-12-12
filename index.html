@@ -11,7 +11,9 @@
     <p class="wander">WANDER</p>
     <p class="wiser">WISER</p>
     <h2>CHOOSE A PLACE TO EXPLORE</h2>
-    <link rel="stylesheet" href="../dig245-final/assets/js/leaflet/leaflet.css" />
+    <link href="
+    https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.css
+    " rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,17 +32,19 @@
             margin-top: 10px;
             margin-left: 10px;
             margin-right: 10px;
-            padding-bottom:200px;
-            
+            padding-bottom: 200px;
+
         }
 
         #map {
             flex: 1;
             height: 100%;
         }
-        #radiusControl{
+
+        #radiusControl {
             position: absolute;
             bottom: 10px;
+            margin-top:10px;
             left: 10px;
             z-index: 1000;
             background-color: white;
@@ -48,6 +52,7 @@
             border: 1px solid #ddd;
             border-radius: 5px;
         }
+        
 
         #sidebar {
             display: none;
@@ -57,7 +62,7 @@
             overflow-y: auto;
             height: 100vh;
             margin-bottom: 50px;
-            margin-left:10px;
+            margin-left: 10px;
         }
 
         #results {
@@ -162,7 +167,6 @@
             height: 30px;
             border-radius: 50%;
         } */
-        
     </style>
 </head>
 
@@ -183,80 +187,98 @@
 
     <button id="resetButton">Clear Results</button>
 
-    <script src="../dig245-final/assets/js/leaflet/leaflet.js"></script>
+    <script src="
+    https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.min.js
+    "></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.0.16/dist/sweetalert2.all.min.js"></script>
 
     <script>
-       document.addEventListener('DOMContentLoaded', function () {
-    var mymap = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(mymap);
 
-    // Add event listener for the radius slider
-    const radiusSlider = document.getElementById('radiusSlider');
-    const radiusValue = document.getElementById('radiusValue');
-    let firstClick = true; // Variable to track the first click
+        document.addEventListener('DOMContentLoaded', function () {
 
-    radiusSlider.addEventListener('input', function () {
-        const newRadius = parseInt(radiusSlider.value);
-        radiusValue.textContent = newRadius;
-        updateRadius(newRadius);
-    });
+            let loc = [0, 0];
+            let zoom = 2;
 
-    async function updateRadius(newRadius) {
-        // Fetch places data with the new radius
-        fetchPlacesData(lastClickedLatLng.lat, lastClickedLatLng.lng, parseInt(radiusSlider.value));
-    }
+            var mymap = L.map('map', {
+                center: loc,
+                zoom: zoom,
+                minZoom: zoom, // Set the minimum zoom level to the initial zoom level
+                maxBounds: [
+                    [-90, -180], // Southwest coordinates
+                    [90, 180]    // Northeast coordinates
+                ],
+                maxBoundsViscosity: 1.0 // Elastic bounce back when users try to pan outside bounds
+            });
 
-    // Define a layer group for markers
-    const markersLayer = L.layerGroup().addTo(mymap);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(mymap);
 
-    // Variable to store the last clicked coordinates
-    let lastClickedLatLng;
-    let lastMarker; // Variable to store the last added marker
+            // Add event listener for the radius slider
+            const radiusSlider = document.getElementById('radiusSlider');
+            const radiusValue = document.getElementById('radiusValue');
+            let firstClick = true; // Variable to track the first click
 
-    mymap.on('click', function (e) {
-        console.log('Latitude: ' + e.latlng.lat.toFixed(4) + ', Longitude: ' + e.latlng.lng.toFixed(4));
+            radiusSlider.addEventListener('input', function () {
+                const newRadius = parseInt(radiusSlider.value);
+                radiusValue.textContent = newRadius;
+                updateRadius(newRadius);
+            });
 
-        // Remove the last added marker if exists
-        if (lastMarker) {
-            markersLayer.removeLayer(lastMarker);
-        }
+            async function updateRadius(newRadius) {
+                // Fetch places data with the new radius
+                //fetchPlacesData(lastClickedLatLng.lat, lastClickedLatLng.lng, parseInt(radiusSlider.value));
+                const result = await fetchPlacesData(lastClickedLatLng.lat, lastClickedLatLng.lng, newRadius);
+                await updateMapWithPlacesData(result);
+            }
 
-        // Store the clicked coordinates in a variable
-        lastClickedLatLng = e.latlng;
+            // Define a layer group for markers
+            const markersLayer = L.layerGroup().addTo(mymap);
 
-        // Drop a star marker at the clicked coordinates
-        const markerColor = firstClick ? 'rgb(254, 109, 109)' : 'blue'; // Color for the first click
-        const marker = L.marker([e.latlng.lat, e.latlng.lng], {
-        icon: L.divIcon({
-        className: 'custom-marker',
-        html: '<svg height="30" width="30" xmlns="http://www.w3.org/2000/svg"><polygon points="15,0 18,10 28,10 20,15 23,25 15,20 7,25 10,15 2,10 12,10" style="fill:' + markerColor + '; stroke:black; stroke-width:2;"/></svg>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-        })
-        }).addTo(mymap);
+            // Variable to store the last clicked coordinates
+            let lastClickedLatLng;
+            let lastMarker; // Variable to store the last added marker
 
-        lastMarker = marker;
-        fetchPlacesData(e.latlng.lat, e.latlng.lng, 1600);
 
-        // Show the reset button
-        document.getElementById('resetButton').style.display = 'block';
+            mymap.on('click', async function (e) {
 
-        // Update the firstClick variable
-        firstClick = false;
-    });
+                console.log('Latitude: ' + e.latlng.lat.toFixed(4) + ', Longitude: ' + e.latlng.lng.toFixed(4));
 
-    async function fetchPlacesData(latitude, longitude, radius) {
-        // Clear existing markers
-        markersLayer.clearLayers();
+                // Remove the last added marker if exists
+                if (lastMarker) {
+                    markersLayer.removeLayer(lastMarker);
+                }
+
+                // Store the clicked coordinates in a variable
+                lastClickedLatLng = e.latlng;
+
+                // Drop a star marker at the clicked coordinates
+                const markerColor = firstClick ? 'rgb(254, 109, 109)' : 'rgb(254, 109, 109)'; // Color for the first click
+                const marker = L.marker([e.latlng.lat, e.latlng.lng], {
+                    icon: L.divIcon({
+                        className: 'custom-marker',
+                        html: '<svg height="30" width="30" xmlns="http://www.w3.org/2000/svg"><polygon points="15,0 18,10 28,10 20,15 23,25 15,20 7,25 10,15 2,10 12,10" style="fill:' + markerColor + '; stroke:black; stroke-width:2;"/></svg>',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 30],
+                    })
+                }).addTo(mymap);
+
+                lastMarker = marker;
+                let result = await fetchPlacesData(e.latlng.lat, e.latlng.lng, 1600);
+                await updateMapWithPlacesData(result)
+
+                // Show the reset button
+                document.getElementById('resetButton').style.display = 'block';
+
+                // Update the firstClick variable
+                firstClick = false;
+            });
+
+            async function fetchPlacesData(latitude, longitude, radius) {
 
                 const apiKey = '1356a4d072mshefdafd11e6d7e7dp16999cjsn9f81fc638c55';
                 const lang = 'en';
-
                 const url = `https://opentripmap-places-v1.p.rapidapi.com/${lang}/places/radius?radius=${radius}&lon=${longitude}&lat=${latitude}`;
-
                 const options = {
                     method: 'GET',
                     headers: {
@@ -264,21 +286,133 @@
                         'X-RapidAPI-Host': 'opentripmap-places-v1.p.rapidapi.com'
                     }
                 };
+                let result;
+                await fetch(url, options)
+                    .then(response => response.json())
+                    .then(json => {
+                        console.log("json", json)
+                        result = json
+                    })
+                    .catch(err => {
+                        console.warn(err)
+                        result = [];
+                    })
 
+                console.log('Fetched data:', result);
+                return result;
+            }
+
+
+            async function updateMapWithPlacesData(result) {
                 try {
-                    const response = await fetch(url, options);
-                    const result = await response.json();
-
-                    console.log('Fetched data:', result);
-
+                    console.log("updateMapWithPlacesData() [1]", result.features)
                     if (result.features && result.features.length > 0) {
-                        const features = result.features;
 
+                        // 0
+                        for (let i = 0; i < result.features.length; i++) {
+                            console.log(0, result.features[i].properties.name, 0, result.features[i].properties.kinds)
+                        }
                         // Filter out places 
-                        const filteredFeatures = features.filter(place => {
+                        const filteredFeatures = result.features.filter(place => {
                             const kinds = place.properties.kinds.split(',');
                             return !kinds.includes('Other_temples') && !kinds.includes('Other_churches');
                         });
+                        // 1 Log the kinds property for debugging
+                        filteredFeatures.forEach(place => {
+                            console.log(1, place.properties.name, 1, place.properties.kinds);
+                        });
+
+
+
+                        for (let i = 0; i < result.features.length; i++) {
+                            let str = result.features[i].properties.kinds.toLowerCase();
+                            str = str.replace("other_buildings_and_structures", "");
+                            str = str.replace("other_churches", "");
+                            str = str.replace("other_temples", "");
+                            str = str.replace("other_theatres", "");
+                            str = str.replace("other_nature_conservation_areas", "");
+                            str = str.replace("other_buildings", "");
+                            str = str.replace("other_hotels", "");
+                            str = str.replace("other_museums", "");
+                            str = str.replace("other_burial_places", "");
+                            str = str.replace("synagogues", "");
+                            str = str.replace("eastern_orthodox_churches", "");
+                            str = str.replace("interesting_places", "");
+                            str = str.replace("other_archaeological_sites", "");
+                            str = str.replace("banks", "");
+                            str = str.replace("other_theatres", "");
+                            str = str.replace("historic_architecture", "");
+                            str = str.replace("cultural", "");
+                            str = str.replace("churches", "");
+                            str = str.replace("catholic_churches", "");
+                            str = str.replace("destroyed_objects", "");
+                            str = str.replace("churches", "");
+                            str = str.replace("other_beaches", "");
+                            str = str.replace("cathedrals", "");
+                            str = str.replace("buddhist_temples", "");
+                            str = str.replace("historical_places", "");
+                            str = str.replace("historic_districts", "");
+                            str = str.replace("burial_places", "");
+                            str = str.replace("cinemas", "");
+                            str = str.replace("other_fortifications", "");
+                            str = str.replace("unclassified_objects", "");
+                            str = str.replace("monuments_and_memorials", "");
+                            str = str.replace("adult", "");
+                            str = str.replace("other_amusement_rides", "");
+                            str = str.replace("suspension_bridges", "");
+                            str = str.replace("other_towers", "");
+                            str = str.replace("nature_reserves", "");
+                            str = str.replace("sculptures", "");
+                            str = str.replace("other_bridges", "");
+                            str = str.replace("mosques", "");
+                            str = str.replace("abandoned_railway_stations", "");
+                            str = str.replace("war_memorials", "");
+                            str = str.replace("science_museums", "");
+                            str = str.replace("military_museums", "");
+                            str = str.replace("moveable_bridges", "");
+                            str = str.replace("local_museums", "");
+                            str = str.replace("stone_bridges", "");
+                            str = str.replace("other_technology_museums", "");
+                            str = str.replace("museums_of_science_and_technology", "");
+                            str = str.replace("stadiums", "");
+                            str = str.replace("defensive_walls", "");
+                            str = str.replace("factories", "");
+                            str = str.replace("power_stations", "");
+                            str = str.replace("hindu_temples", "");
+                            str = str.replace("biographical_museums", "");
+                            str = str.replace("historic_house_museums", "");
+                            str = str.replace("history_museums", "");
+                            str = str.replace("transmitter_towers", "");
+                            str = str.replace("waterfalls", "");
+                            str = str.replace("water", "");
+                            str = str.replace("sylvan_theatres", "");
+                            str = str.replace("national_museums", "");
+                            str = str.replace("guest_houses", "");
+                            str = str.replace("children_museums", "");
+                            str = str.replace("historic_settlements", "");
+                            str = str.replace("other", "");
+                            str = str.replace("clock_towers", "");
+                            str = str.replace("puppetries", "");
+                            str = str.replace("rock_formations", "");
+                            str = str.replace("rock_beaches", "");
+
+
+
+
+                            str = str.replace(",,", ",");
+                            result.features[i].properties.kinds = str;
+                        }
+                        // 2
+                        for (let i = 0; i < result.features.length; i++) {
+                            console.log(2, result.features[i].properties.name, 2, result.features[i].properties.kinds)
+                        }
+
+
+
+
+
+                        // Clear existing markers
+                        markersLayer.clearLayers();
 
                         // Drop a pin on the map for each filtered place
                         filteredFeatures.forEach(place => {
@@ -287,10 +421,7 @@
                             markersLayer.addLayer(marker);
                         });
 
-                        // Log the kinds property for debugging
-                        filteredFeatures.forEach(place => {
-                            console.log('Kinds property:', place.properties.kinds);
-                        });
+
 
                         // Display results in sidebar
                         displayResults(filteredFeatures);
@@ -307,15 +438,17 @@
                 }
             }
 
+
             // Helper function to show popup when no results are found
             function showNoResultsPopup() {
-            Swal.fire({
-                title: 'No Results Found',
-                text: 'Try expanding the radius below or selecting a new location.',
-                icon: 'info',
-                confirmButtonText: 'OK'
-            });
+                Swal.fire({
+                    title: 'No Results Found',
+                    text: 'Try expanding the radius below or selecting a new location.',
+                    icon: 'info',
+                    confirmButtonText: 'OK'
+                });
             }
+            
 
             // Helper function to display results
             function displayResults(results) {
@@ -324,6 +457,8 @@
 
                 // Group results by category
                 const groupedResults = groupResultsByCategory(results);
+
+                console.log("groupedResults", groupedResults)
 
                 // Iterate through each category and append to the container
                 for (const [category, places] of Object.entries(groupedResults)) {
@@ -334,7 +469,7 @@
                     // Create a clickable arrow to toggle the visibility of the list
                     const arrowIcon = document.createElement('span');
                     arrowIcon.classList.add('arrow-icon');
-                    arrowIcon.textContent = '▼'; // You can use a suitable arrow character
+                    arrowIcon.textContent = '▼';
 
                     categoryHeader.appendChild(arrowIcon);
                     resultsContainer.appendChild(categoryHeader);
@@ -345,10 +480,12 @@
 
                     // Iterate through each place under the category and add to the list
                     places.forEach(place => {
-                        const name = place.properties.name;
-                        const listItem = document.createElement('li');
-                        listItem.textContent = name;
-                        placeList.appendChild(listItem);
+                        if (place.properties.name && place.properties.name.trim() !== '') {
+                            const name = place.properties.name;
+                            const listItem = document.createElement('li');
+                            listItem.textContent = name;
+                            placeList.appendChild(listItem);
+                        }
                     });
 
                     resultsContainer.appendChild(placeList);
@@ -370,20 +507,63 @@
                     kinds.forEach(kind => {
                         const trimmedKind = kind.trim();
 
-                        if (!groupedResults[trimmedKind]) {
-                            groupedResults[trimmedKind] = [];
-                        }
+                        if (trimmedKind !== '') {
+                            let categoryName = mapCategoryName(trimmedKind);
 
-                        groupedResults[trimmedKind].push(result);
+                            if (!groupedResults[categoryName]) {
+                                groupedResults[categoryName] = [];
+                            }
+
+                            groupedResults[categoryName].push(result);
+                        }
                     });
                 });
 
-                return groupedResults;
-            }
+    return groupedResults;
+}
+
+    // Helper function to map category names
+    function mapCategoryName(originalName) {
+    const categoryMappings = {
+        'religion': 'Religious Temples',
+        'urban_environment': 'Urban Developments',
+        'historic': 'Historic Sites',
+        'religion': 'Religious Temples',
+        'tourist_object': 'Top Tourist Attractions',
+        'architecture': 'Cool Architecture',
+        'theatres_and_entertainments': 'Theaters & Entertainment',
+        'religion': 'Religious Temples',
+        'art_galleries': 'Art Galleries',
+        'bank': 'Banks',
+        'tourist_facilities': 'Tourist Resources',
+        'gardens_and_parks': 'Gardens & Parks',
+        'installation': 'Installations',
+        'industrial_facilities': 'Industrial Facilities',
+        'music_venues': 'Music Venues',
+        'natural': 'Natural Sites',
+        'monuments': 'Monuments & Memorials',
+        'wall_painting': 'Murals',
+        'railway_stations': 'Train Stations',
+        'view_points': 'View Points',
+        'historic_object': 'Historic Areas',
+        'concert_halls': 'Concert Halls',
+        'opera_houses': 'Opera Houses',
+        'archaeology': 'Archaeological Sites',
+        'national_parks': 'National Parks',
+        'geological_formations': 'Geological Formations',
+        'sport': 'Stadiums',
+
+
+    };
+
+    // If a mapping exists, return the mapped name; otherwise, return the original name
+    return categoryMappings[originalName.toLowerCase()] || originalName;
+    }
+
 
             document.getElementById('resetButton').addEventListener('click', function () {
                 markersLayer.clearLayers();
-                
+
 
                 if (lastMarker) {
                     mymap.removeLayer(lastMarker);
@@ -403,7 +583,9 @@
                 // Hide the reset button
                 document.getElementById('resetButton').style.display = 'none';
             });
+
         });
+
     </script>
 
 </body>
